@@ -58,7 +58,9 @@ RUN groupadd -r serene && useradd -r -g serene -d /app serene \
 USER serene
 
 # Persistent data volume (database, uploads, model cache, etc.)
-VOLUME ["/data"]
+# COMMENTED OUT FOR RAILWAY DEPLOYMENT.
+# Railway considers VOLUME in Dockerfiles an error when building an image; when running a pre-built image, it silently ignores it.
+# VOLUME ["/data"]
 
 # One listener: the app server also serves Socket.IO's /socket.io/ endpoint.
 EXPOSE 3000
