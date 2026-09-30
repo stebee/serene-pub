@@ -97,6 +97,8 @@ export async function authMiddleware(
 		// token at all.
 		const origin = socket.handshake.headers.origin as string | undefined
 		const requestHost = socket.handshake.headers.host as string | undefined
+		const sameOriginFetch = socket.handshake.headers["sec-fetch-site"] === "same-origin"
+
 		if (!origin) {
 			// No Origin header at all — a non-browser client (CLI tool, the
 			// Android wrapper, server-to-server), not subject to the
@@ -110,7 +112,15 @@ export async function authMiddleware(
 			// depth-independent chain check (not just the raw peer address),
 			// so a reverse proxy in front of this server can't make every
 			// connection look local.
-			if (!isLocalThroughProxy(socket)) {
+			
+			// The sameOriginFetch test is necessary to handle deployments where
+			// the upstream proxy is remote. Browsers do not attach Origin to the
+			// same-origin GET that Socket.IO uses, but they do attach
+			// Sec-Fetch-Site: same-origin; script cannot attach this header and so
+			// it cannot be forged cross-site. A non-browser attacker can forge it,
+			// but a non-browser attacker was already able to set Origin, so there's
+			// no net change in security here.
+			if (!sameOriginFetch && !isLocalThroughProxy(socket)) {
 				console.log(
 					`Socket connection with no Origin header from "${clientAddress}" — rejecting (not a local-network address; non-browser clients are restricted to the local network, with no override — enable user accounts and connect with a token to reach this instance from elsewhere)`
 				)
